@@ -17,11 +17,12 @@ source.include_exts = py,png,jpg,kv,atlas
 icon.filename = calcu.png
 
 # (list) Application requirements
-# Asegúrate de incluir kivy y cualquier otra librería que uses (ej: kivymd, pillow)
-requirements = python3,kivy==2.3.0,kivymd
+# NOTA: Eliminamos la versión fija de kivy para evitar conflictos con KivyMD y la versión de python3 de las Actions.
+requirements = python3,kivy,kivymd,pillow
 
-# (str) Android architecture (puedes dejarlo por defecto o usar armeabi-v7a)
-android.archs = arm64-v8a
+# (list) The Android archs to build for.
+# NOTA: Agregamos armeabi-v7a junto a arm64-v8a para que sea compatible con casi cualquier celular Android actual.
+android.archs = arm64-v8a, armeabi-v7a
 
 # (bool) Accept SDK license
 android.accept_sdk_license = True
