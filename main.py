@@ -9,33 +9,7 @@ from kivy.graphics import Color, Rectangle, RoundedRectangle
 from kivy.clock import Clock
 
 # ==========================================
-# 1. LÓGICA DE LAS OPERACIONES MATEMÁTICAS
-# ==========================================
-class OperacionSumar:
-    @staticmethod
-    def ejecutar(a, b):
-        return a + b
-
-class OperacionRestar:
-    @staticmethod
-    def ejecutar(a, b):
-        return a - b
-
-class OperacionMultiplicar:
-    @staticmethod
-    def ejecutar(a, b):
-        return a * b
-
-class OperacionDividir:
-    @staticmethod
-    def ejecutar(a, b):
-        if b == 0:
-            return "Error"
-        return a / b
-
-
-# ==========================================
-# 2. CONTROLADOR DE LA CALCULADORA
+# LÓGICA MATEMÁTICA
 # ==========================================
 class ControladorCalculadora:
     def __init__(self):
@@ -47,8 +21,7 @@ class ControladorCalculadora:
         if texto_actual == "0" or self.nuevo_numero or texto_actual == "Error":
             self.nuevo_numero = False
             return digito
-        else:
-            return texto_actual + digito
+        return texto_actual + digito
 
     def presionar_operacion(self, texto_actual, operacion):
         self.num1 = texto_actual
@@ -65,43 +38,32 @@ class ControladorCalculadora:
     def presionar_igual(self, texto_actual):
         if self.op is None or self.num1 == "":
             return texto_actual
-
         try:
             val1 = float(self.num1)
             val2 = float(texto_actual)
-            resultado = 0
-
-            if self.op == '+':
-                resultado = OperacionSumar.ejecutar(val1, val2)
-            elif self.op == '-':
-                resultado = OperacionRestar.ejecutar(val1, val2)
-            elif self.op == '*':
-                resultado = OperacionMultiplicar.ejecutar(val1, val2)
-            elif self.op == '/':
-                resultado = OperacionDividir.ejecutar(val1, val2)
-
-            if isinstance(resultado, float) and resultado.is_integer():
-                resultado = int(resultado)
-
+            if self.op == '+': res = val1 + val2
+            elif self.op == '-': res = val1 - val2
+            elif self.op == '*': res = val1 * val2
+            elif self.op == '/': res = "Error" if val2 == 0 else val1 / val2
+            
+            if isinstance(res, float) and res.is_integer():
+                res = int(res)
             self.op = None
             self.num1 = ""
             self.nuevo_numero = True
-            return str(resultado)
-            
-        except Exception:
+            return str(res)
+        except:
             self.op = None
             self.num1 = ""
             self.nuevo_numero = True
             return "Error"
 
-
 # ==========================================
-# 3. INTERFAZ GRÁFICA (KIVY NATIVO)
+# INTERFAZ GRÁFICA NATIVA
 # ==========================================
 class PantallaInicio(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
         with self.canvas.before:
             Color(1, 0.92, 0.94, 1)
             self.rect = Rectangle(pos=self.pos, size=self.size)
@@ -112,8 +74,7 @@ class PantallaInicio(Screen):
             font_size='32sp',  
             color=(0.85, 0.35, 0.45, 1),
             bold=True,
-            halign='center',
-            line_height=1.2
+            halign='center'
         )
         self.add_widget(self.logo)
 
@@ -121,14 +82,13 @@ class PantallaInicio(Screen):
         self.rect.pos = self.pos
         self.rect.size = self.size
 
-    # USAMOS EL EVENTO OFICIAL DE KIVY PARA DISPARAR EL CAMBIO DE PANTALLA
     def on_enter(self, *args):
-        Clock.schedule_once(self.cambiar_a_calculadora, 2.0)
+        # Programación segura para evitar congelamientos en el teléfono
+        Clock.schedule_once(self.cambiar_pantalla, 2.0)
 
-    def cambiar_a_calculadora(self, dt):
+    def cambiar_pantalla(self, dt):
         if self.manager:
             self.manager.current = 'calculadora'
-
 
 class BotonLindo(Button):
     def __init__(self, texto, color_fondo, **kwargs):
@@ -136,29 +96,26 @@ class BotonLindo(Button):
         self.text = texto
         self.background_normal = ''
         self.background_down = ''
-        self.background_color = (0, 0, 0, 0) 
-        self.font_size = '22sp' 
+        self.background_color = (0, 0, 0, 0)
+        self.font_size = '22sp'
         self.bold = True
         self.color = (1, 1, 1, 1)
-        
         self.color_base = color_fondo
         
         with self.canvas.before:
             self.color_canvas = Color(*self.color_base)
             self.bg_rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[15])
-            
-        self.bind(pos=self.actualizar_geometria, size=self.actualizar_geometria)
+        self.bind(pos=self.actualizar_geom, size=self.actualizar_geom)
 
-    def actualizar_geometria(self, *args):
+    def actualizar_geom(self, *args):
         self.bg_rect.pos = self.pos
         self.bg_rect.size = self.size
 
     def on_state(self, instance, value):
         if value == 'down':
-            self.color_canvas.rgba = (self.color_base[0]*0.8, self.color_base[1]*0.8, self.color_base[2]*0.8, 1)
+            self.color_canvas.rgba = [c * 0.8 for c in self.color_base[:3]] + [1]
         else:
             self.color_canvas.rgba = self.color_base
-
 
 class Calculadora(BoxLayout):
     def __init__(self, **kwargs):
@@ -166,7 +123,6 @@ class Calculadora(BoxLayout):
         self.orientation = 'vertical'
         self.padding = 10
         self.spacing = 8
-        
         self.controlador = ControladorCalculadora()
         
         with self.canvas.before:
@@ -175,53 +131,26 @@ class Calculadora(BoxLayout):
         self.bind(pos=self.actualizar_fondo, size=self.actualizar_fondo)
 
         self.pantalla = TextInput(
-            text='0',
-            font_size='36sp', 
-            halign='right',
-            readonly=True,
-            size_hint_y=0.18, 
-            background_color=(1, 1, 1, 1),
-            foreground_color=(0.85, 0.35, 0.45, 1),
-            multiline=False
+            text='0', font_size='36sp', halign='right', readonly=True,
+            size_hint_y=0.18, foreground_color=(0.85, 0.35, 0.45, 1),
+            background_color=(1, 1, 1, 1), multiline=False
         )
-        self.add_widget(self.pantalla)
+        self.add_widget(self.pantballa if hasattr(self, 'pantballa') else self.pantalla)
 
         rejilla = GridLayout(cols=4, spacing=6)
-        
         botones = [
-            ('7', (1, 0.72, 0.77, 1), 'num', '7'),
-            ('8', (1, 0.72, 0.77, 1), 'num', '8'),
-            ('9', (1, 0.72, 0.77, 1), 'num', '9'),
-            ('+', (0.9, 0.45, 0.55, 1), 'op', '+'),
-            
-            ('4', (1, 0.72, 0.77, 1), 'num', '4'),
-            ('5', (1, 0.72, 0.77, 1), 'num', '5'),
-            ('6', (1, 0.72, 0.77, 1), 'num', '6'),
-            ('-', (0.9, 0.45, 0.55, 1), 'op', '-'),
-            
-            ('1', (1, 0.72, 0.77, 1), 'num', '1'),
-            ('2', (1, 0.72, 0.77, 1), 'num', '2'),
-            ('3', (1, 0.72, 0.77, 1), 'num', '3'),
-            ('x', (0.9, 0.45, 0.55, 1), 'op', '*'),
-            
-            ('C', (0.8, 0.35, 0.4, 1), 'c', 'C'),
-            ('0', (1, 0.72, 0.77, 1), 'num', '0'),
-            ('=', (0.85, 0.35, 0.45, 1), 'igual', '='),
-            ('/', (0.9, 0.45, 0.55, 1), 'op', '/')
+            ('7', (1, 0.72, 0.77, 1), 'num'), ('8', (1, 0.72, 0.77, 1), 'num'), ('9', (1, 0.72, 0.77, 1), 'num'), ('+', (0.9, 0.45, 0.55, 1), 'op'),
+            ('4', (1, 0.72, 0.77, 1), 'num'), ('5', (1, 0.72, 0.77, 1), 'num'), ('6', (1, 0.72, 0.77, 1), 'num'), ('-', (0.9, 0.45, 0.55, 1), 'op'),
+            ('1', (1, 0.72, 0.77, 1), 'num'), ('2', (1, 0.72, 0.77, 1), 'num'), ('3', (1, 0.72, 0.77, 1), 'num'), ('x', (0.9, 0.45, 0.55, 1), '*'),
+            ('C', (0.8, 0.35, 0.4, 1), 'c'), ('0', (1, 0.72, 0.77, 1), 'num'), ('=', (0.85, 0.35, 0.45, 1), 'igual'), ('/', (0.9, 0.45, 0.55, 1), '/')
         ]
 
-        for texto, color, tipo, valor_logico in botones:
+        for texto, color, tipo in botones:
             btn = BotonLindo(texto=texto, color_fondo=color)
-            
-            if tipo == 'num':
-                btn.bind(on_press=lambda instance, v=valor_logico: self.pantalla_num(v))
-            elif tipo == 'op':
-                btn.bind(on_press=lambda instance, v=valor_logico: self.pantalla_op(v))
-            elif tipo == 'c':
-                btn.bind(on_press=lambda instance: self.pantalla_c())
-            elif tipo == 'igual':
-                btn.bind(on_press=lambda instance: self.pantalla_igual())
-                
+            if tipo == 'num': btn.bind(on_press=lambda val=texto, b=btn: self.press_num(texto))
+            elif tipo == 'op' or tipo == '*': btn.bind(on_press=lambda val=texto, b=btn: self.press_op('*' if texto=='x' else texto))
+            elif tipo == 'c': btn.bind(on_press=lambda b=btn: self.press_c())
+            elif tipo == 'igual': btn.bind(on_press=lambda b=btn: self.press_igual())
             rejilla.add_widget(btn)
 
         self.add_widget(rejilla)
@@ -230,31 +159,17 @@ class Calculadora(BoxLayout):
         self.rect.pos = self.pos
         self.rect.size = self.size
 
-    def pantalla_num(self, digito):
-        self.pantalla.text = self.controlador.presionar_digito(self.pantalla.text, digito)
-
-    def pantalla_op(self, operacion):
-        self.pantalla.text = self.controlador.presionar_operacion(self.pantalla.text, operacion)
-
-    def pantalla_c(self):
-        self.pantalla.text = self.controlador.presionar_c()
-
-    def pantalla_igual(self):
-        self.pantalla.text = self.controlador.presionar_igual(self.pantalla.text)
-
-
-class PantallaCalculadora(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.add_widget(Calculadora())
-
+    def press_num(self, d): self.pantalla.text = self.controlador.presionar_digito(self.pantalla.text, d)
+    def press_op(self, o): self.pantalla.text = self.controlador.presionar_operacion(self.pantalla.text, o)
+    def press_c(self): self.pantalla.text = self.controlador.presionar_c()
+    def press_igual(self): self.pantalla.text = self.controlador.presionar_igual(self.pantalla.text)
 
 class MainApp(App):
     def build(self):
-        self.title = "Calculadora del Yavirac"
         sm = ScreenManager()
         sm.add_widget(PantallaInicio(name='inicio'))
-        sm.add_widget(PantallaCalculadora(name='calculadora'))
+        sm.add_widget(Screen(name='calculadora'))
+        sm.get_screen('calculadora').add_widget(Calculadora())
         return sm
 
 if __name__ == '__main__':
