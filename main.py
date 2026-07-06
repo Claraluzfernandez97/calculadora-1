@@ -1,154 +1,261 @@
-from kivymd.app import MDApp
-from kivymd.uix.screen import MDScreen
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.gridlayout import MDGridLayout
-from kivymd.uix.button import MDRoundFlatButton
-from kivymd.uix.textfield import MDTextField
-from kivy.core.window import Window
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
+from kivy.uix.label import Label
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.graphics import Color, Rectangle, RoundedRectangle
+from kivy.clock import Clock
 
-# Configurar un tamaño de ventana estándar para pruebas en PC (opcional)
-Window.size = (360, 640)
+# ==========================================
+# 1. LÓGICA DE LAS OPERACIONES MATEMÁTICAS
+# ==========================================
+class OperacionSumar:
+    @staticmethod
+    def ejecutar(a, b):
+        return a + b
 
-class CalculadoraScreen(MDScreen):
+class OperacionRestar:
+    @staticmethod
+    def ejecutar(a, b):
+        return a - b
+
+class OperacionMultiplicar:
+    @staticmethod
+    def ejecutar(a, b):
+        return a * b
+
+class OperacionDividir:
+    @staticmethod
+    def ejecutar(a, b):
+        if b == 0:
+            return "Error"
+        return a / b
+
+
+# ==========================================
+# 2. CONTROLADOR DE LA CALCULADORA
+# ==========================================
+class ControladorCalculadora:
+    def __init__(self):
+        self.num1 = ""
+        self.op = None
+        self.nuevo_numero = False
+
+    def presionar_digito(self, texto_actual, digito):
+        if texto_actual == "0" or self.nuevo_numero or texto_actual == "Error":
+            self.nuevo_numero = False
+            return digito
+        else:
+            return texto_actual + digito
+
+    def presionar_operacion(self, texto_actual, operacion):
+        self.num1 = texto_actual
+        self.op = operacion
+        self.nuevo_numero = True
+        return texto_actual
+
+    def presionar_c(self):
+        self.num1 = ""
+        self.op = None
+        self.nuevo_numero = False
+        return "0"
+
+    def presionar_igual(self, texto_actual):
+        if self.op is None or self.num1 == "":
+            return texto_actual
+
+        try:
+            val1 = float(self.num1)
+            val2 = float(texto_actual)
+            resultado = 0
+
+            if self.op == '+':
+                resultado = OperacionSumar.ejecutar(val1, val2)
+            elif self.op == '-':
+                resultado = OperacionRestar.ejecutar(val1, val2)
+            elif self.op == '*':
+                resultado = OperacionMultiplicar.ejecutar(val1, val2)
+            elif self.op == '/':
+                resultado = OperacionDividir.ejecutar(val1, val2)
+
+            if isinstance(resultado, float) and resultado.is_integer():
+                resultado = int(resultado)
+
+            self.op = None
+            self.num1 = ""
+            self.nuevo_numero = True
+            return str(resultado)
+            
+        except Exception:
+            self.op = None
+            self.num1 = ""
+            self.nuevo_numero = True
+            return "Error"
+
+
+# ==========================================
+# 3. INTERFAZ GRÁFICA (KIVY NATIVO)
+# ==========================================
+class PantallaInicio(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        # Layout principal vertical
-        layout_principal = MDBoxLayout(orientation='vertical', padding=15, spacing=10)
+        with self.canvas.before:
+            Color(1, 0.92, 0.94, 1)
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self.actualizar_fondo, size=self.actualizar_fondo)
         
-        # Pantalla de visualización de texto corregida
-        self.pantalla = MDTextField(
-            text="0",
-            halign="right",
-            font_size="36sp",
-            readonly=True,
-            mode="fill",
-            fill_color_normal=(0.95, 0.95, 0.95, 1)
+        # Texto fijo y seguro para evitar cierres en Android
+        self.logo = Label(
+            text="Calculadora\ndel Yavirac",
+            font_size='32sp',  
+            color=(0.85, 0.35, 0.45, 1),
+            bold=True,
+            halign='center',
+            line_height=1.2
         )
-        layout_principal.add_widget(self.pantalla)
-        
-        # Grid para los botones (4 columnas)
-        grid_botones = MDGridLayout(cols=4, spacing=10, size_hint_y=0.8)
-        
-        # Lista de botones
-        botones = [
-            '7', '8', '9', '/',
-            '4', '5', '6', '*',
-            '1', '2', '3', '-',
-            'C', '0', '=', '+'
-        ]
-        
-        for texto in botones:
-            boton = MDRoundFlatButton(
-                text=texto,
-                font_size="24sp",
-                size_hint=(1, 1),
-                on_press=self.al_presionar_boton
-            )
-            grid_botones.add_widget(boton)
-            
-        layout_principal.add_widget(grid_botones)
-        self.add_widget(layout_principal)
+        self.add_widget(self.logo)
 
-    def al_presionar_boton(self, instancia):
-        texto_boton = instancia.text
-        texto_actual = self.pantalla.text
+    def actualizar_fondo(self, *args):
+        self.rect.pos = self.pos
+        self.rect.size = self.size
 
-        if texto_boton == 'C':
-            self.pantalla.text = '0'
+    def on_enter(self):
+        # En lugar de animar gráficos pesados, usamos un temporizador limpio de 2 segundos para pasar a la app
+        Clock.schedule_once(self.cambiar_a_calculadora, 2.0)
+
+    def cambiar_a_calculadora(self, dt):
+        self.manager.current = 'calculadora'
+
+
+class BotonLindo(Button):
+    def __init__(self, texto, color_fondo, **kwargs):
+        super().__init__(**kwargs)
+        self.text = texto
+        self.background_normal = ''
+        self.background_down = ''
+        self.background_color = (0, 0, 0, 0) 
+        self.font_size = '22sp' 
+        self.bold = True
+        self.color = (1, 1, 1, 1)
+        
+        self.color_base = color_fondo
+        
+        with self.canvas.before:
+            self.color_canvas = Color(*self.color_base)
+            self.bg_rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[15])
             
-        elif texto_boton == '=':
-            # Validación preventiva: si termina en un operador, ignoramos el '=' o limpiamos el operador terminal
-            if texto_actual[-1] in ['+', '-', '*', '/']:
-                texto_actual = texto_actual[:-1]
-                
-            try:
-                # Evalúa la expresión de manera segura
-                resultado = eval(texto_actual)
-                
-                # Control de decimales flotantes para evitar desbordamiento en pantalla
-                if isinstance(resultado, float):
-                    if resultado.is_integer():
-                        resultado = int(resultado)
-                    else:
-                        resultado = round(resultado, 4) # Redondea a un máximo de 4 decimales
-                        
-                self.pantalla.text = str(resultado)
-            except Exception:
-                self.pantalla.text = 'Error'
+        self.bind(pos=self.actualizar_geometria, size=self.actualizar_geometria)
+
+    def actualizar_geometria(self, *args):
+        self.bg_rect.pos = self.pos
+        self.bg_rect.size = self.size
+
+    def on_state(self, instance, value):
+        if value == 'down':
+            self.color_canvas.rgba = (self.color_base[0]*0.8, self.color_base[1]*0.8, self.color_base[2]*0.8, 1)
         else:
-            # Evita acumular operadores seguidos como "++" o "/*"
-            if texto_boton in ['+', '-', '*', '/'] and texto_actual[-1] in ['+', '-', '*', '/']:
-                # Reemplaza el último operador con el nuevo presionado
-                self.pantalla.text = texto_actual[:-1] + texto_boton
-            elif texto_actual == '0' or texto_actual == 'Error':
-                if texto_boton in ['+', '-', '*', '/']:
-                    self.pantalla.text = '0' + texto_boton
-                else:
-                    self.pantalla.text = texto_boton
-            else:
-                self.pantalla.text += texto_boton
+            self.color_canvas.rgba = self.color_base
 
 
-class CalculadoraApp(MDApp):
+class Calculadora(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.orientation = 'vertical'
+        self.padding = 10
+        self.spacing = 8
+        
+        self.controlador = ControladorCalculadora()
+        
+        with self.canvas.before:
+            Color(1, 0.94, 0.96, 1)
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self.actualizar_fondo, size=self.actualizar_fondo)
+
+        self.pantalla = TextInput(
+            text='0',
+            font_size='36sp', 
+            halign='right',
+            readonly=True,
+            size_hint_y=0.18, 
+            background_color=(1, 1, 1, 1),
+            foreground_color=(0.85, 0.35, 0.45, 1),
+            multiline=False
+        )
+        self.add_widget(self.pantalla)
+
+        rejilla = GridLayout(cols=4, spacing=6)
+        
+        botones = [
+            ('7', (1, 0.72, 0.77, 1), 'num', '7'),
+            ('8', (1, 0.72, 0.77, 1), 'num', '8'),
+            ('9', (1, 0.72, 0.77, 1), 'num', '9'),
+            ('+', (0.9, 0.45, 0.55, 1), 'op', '+'),
+            
+            ('4', (1, 0.72, 0.77, 1), 'num', '4'),
+            ('5', (1, 0.72, 0.77, 1), 'num', '5'),
+            ('6', (1, 0.72, 0.77, 1), 'num', '6'),
+            ('-', (0.9, 0.45, 0.55, 1), 'op', '-'),
+            
+            ('1', (1, 0.72, 0.77, 1), 'num', '1'),
+            ('2', (1, 0.72, 0.77, 1), 'num', '2'),
+            ('3', (1, 0.72, 0.77, 1), 'num', '3'),
+            ('x', (0.9, 0.45, 0.55, 1), 'op', '*'),
+            
+            ('C', (0.8, 0.35, 0.4, 1), 'c', 'C'),
+            ('0', (1, 0.72, 0.77, 1), 'num', '0'),
+            ('=', (0.85, 0.35, 0.45, 1), 'igual', '='),
+            ('/', (0.9, 0.45, 0.55, 1), 'op', '/')
+        ]
+
+        for texto, color, tipo, valor_logico in botones:
+            btn = BotonLindo(texto=texto, color_fondo=color)
+            
+            if tipo == 'num':
+                btn.bind(on_press=lambda instance, v=valor_logico: self.pantalla_num(v))
+            elif tipo == 'op':
+                btn.bind(on_press=lambda instance, v=valor_logico: self.pantalla_op(v))
+            elif tipo == 'c':
+                btn.bind(on_press=lambda instance: self.pantalla_c())
+            elif tipo == 'igual':
+                btn.bind(on_press=lambda instance: self.pantalla_igual())
+                
+            rejilla.add_widget(btn)
+
+        self.add_widget(rejilla)
+
+    def actualizar_fondo(self, *args):
+        self.rect.pos = self.pos
+        self.rect.size = self.size
+
+    def pantalla_num(self, digito):
+        self.pantalla.text = self.controlador.presionar_digito(self.pantalla.text, digito)
+
+    def pantalla_op(self, operacion):
+        self.pantalla.text = self.controlador.presionar_operacion(self.pantalla.text, operacion)
+
+    def pantalla_c(self):
+        self.pantalla.text = self.controlador.presionar_c()
+
+    def pantalla_igual(self):
+        self.pantalla.text = self.controlador.presionar_igual(self.pantalla.text)
+
+
+class PantallaCalculadora(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_widget(Calculadora())
+
+
+class MainApp(App):
     def build(self):
-        # Paleta moderna que se integra de manera excelente con componentes móviles
-        self.theme_cls.primary_palette = "Indigo"
-        self.theme_cls.theme_style = "Light"
-        return CalculadoraScreen()
-
+        self.title = "Calculadora del Yavirac"
+        sm = ScreenManager()
+        sm.add_widget(PantallaInicio(name='inicio'))
+        sm.add_widget(PantallaCalculadora(name='calculadora'))
+        return sm
 
 if __name__ == '__main__':
-    CalculadoraApp().run()
-        # Grid para los botones (4 columnas)
-        grid_botones = MDGridLayout(cols=4, spacing=10, size_hint_y=0.8)
-        
-        # Lista de botones a crear
-        botones = [
-            '7', '8', '9', '/',
-            '4', '5', '6', '*',
-            '1', '2', '3', '-',
-            'C', '0', '=', '+'
-        ]
-        
-        for texto in botones:
-            boton = MDRoundFlatButton(
-                text=texto,
-                font_size="24sp",
-                size_hint=(1, 1),
-                on_press=self.al_presionar_boton
-            )
-            grid_botones.add_widget(boton)
-            
-        layout_principal.add_widget(grid_botones)
-        self.add_widget(layout_principal)
-
-    def al_presionar_boton(self, instancia):
-        texto_boton = instancia.text
-        texto_actual = self.pantalla.text
-
-        if texto_boton == 'C':
-            self.pantalla.text = '0'
-        elif texto_boton == '=':
-            try:
-                # Evalúa la expresión matemática de forma segura
-                resultado = str(eval(texto_actual))
-                self.pantalla.text = resultado
-            except Exception:
-                self.pantalla.text = 'Error'
-        else:
-            if texto_actual == '0' or texto_actual == 'Error':
-                self.pantalla.text = texto_boton
-            else:
-                self.pantalla.text += texto_boton
-
-
-class CalculadoraApp(MDApp):
-    def build(self):
-        self.theme_cls.primary_palette = "Blue"
-        self.theme_cls.theme_style = "Light"
-        return CalculadoraScreen()
-
-
-if __name__ == '__main__':
-    CalculadoraApp().run()
+    MainApp().run()
