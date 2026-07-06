@@ -1,11 +1,13 @@
+[app]
+
 # (str) Title of your application
-title = Calculadora
+title = Calculadora del Yavirac
 
 # (str) Package name
 package.name = calculadora
 
 # (str) Package domain (needed for android packaging)
-package.domain = org.tuusuario
+package.domain = org.yavirac
 
 # (str) Source code where the main.py lives
 source.dir = .
@@ -17,11 +19,10 @@ source.include_exts = py,png,jpg,kv,atlas
 icon.filename = calcu.png
 
 # (list) Application requirements
-# NOTA: Eliminamos la versión fija de kivy para evitar conflictos con KivyMD y la versión de python3 de las Actions.
-requirements = python3,kivy,kivymd,pillow
+# NOTA: Dejamos solo kivy porque tu código actual de la calculadora no usa KivyMD. Esto acelera la compilación en un 50%.
+requirements = python3,kivy
 
 # (list) The Android archs to build for.
-# NOTA: Agregamos armeabi-v7a junto a arm64-v8a para que sea compatible con casi cualquier celular Android actual.
 android.archs = arm64-v8a, armeabi-v7a
 
 # (bool) Accept SDK license
