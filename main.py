@@ -107,7 +107,6 @@ class PantallaInicio(Screen):
             self.rect = Rectangle(pos=self.pos, size=self.size)
         self.bind(pos=self.actualizar_fondo, size=self.actualizar_fondo)
         
-        # Texto fijo y seguro para evitar cierres en Android
         self.logo = Label(
             text="Calculadora\ndel Yavirac",
             font_size='32sp',  
@@ -122,12 +121,13 @@ class PantallaInicio(Screen):
         self.rect.pos = self.pos
         self.rect.size = self.size
 
-    def on_enter(self):
-        # En lugar de animar gráficos pesados, usamos un temporizador limpio de 2 segundos para pasar a la app
+    # USAMOS EL EVENTO OFICIAL DE KIVY PARA DISPARAR EL CAMBIO DE PANTALLA
+    def on_enter(self, *args):
         Clock.schedule_once(self.cambiar_a_calculadora, 2.0)
 
     def cambiar_a_calculadora(self, dt):
-        self.manager.current = 'calculadora'
+        if self.manager:
+            self.manager.current = 'calculadora'
 
 
 class BotonLindo(Button):
